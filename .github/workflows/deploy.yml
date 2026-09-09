@@ -34,8 +34,12 @@ jobs:
         working-directory: web
         run: test -f dist/_redirects || printf '/* /index.html 200\n' > dist/_redirects
 
-      - name: Copy Cloudflare Functions into build output
-        run: cp -r functions web/dist/functions
+      - name: Copy Cloudflare Functions, custom SW, and proxy management page into build output
+        run: |
+          rm -rf web/dist/functions
+          cp -r functions web/dist/functions
+          if [ -f sw.js ]; then cp sw.js web/dist/sw.js; else echo "::warning::sw.js not found at repo root, skipping (custom service worker not deployed)"; fi
+          if [ -f proxy-manage.html ]; then cp proxy-manage.html web/dist/proxy-manage.html; else echo "::warning::proxy-manage.html not found at repo root, skipping"; fi
 
       - name: Deploy to Cloudflare Pages
         working-directory: web
