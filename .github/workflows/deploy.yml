@@ -34,6 +34,9 @@ jobs:
         working-directory: web
         run: test -f dist/_redirects || printf '/* /index.html 200\n' > dist/_redirects
 
+      - name: Copy Cloudflare Functions into build output
+        run: cp -r functions web/dist/functions
+
       - name: Deploy to Cloudflare Pages
         working-directory: web
         run: npx wrangler pages deploy dist --project-name=infinite-canvas --branch main
