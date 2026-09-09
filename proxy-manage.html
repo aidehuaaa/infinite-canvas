@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="zh-CN" data-page-node-id="fEQdAQme3JRTQqXRIAKCAS">
+<head data-page-node-id="4o1ODDlLFozkcKLBvhDGuh">
+<meta charset="utf-8" data-page-node-id="qIDIDpApspSdq4NGQYCeIo" />
+<meta name="viewport" content="width=device-width, initial-scale=1" data-page-node-id="BvdwiiEwXBGcUK9Eg9UtJO" />
+<title>中转站代理设置</title>
+<style>
+  :root { color-scheme: light dark; }
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; max-width: 720px; margin: 32px auto; padding: 0 16px; line-height: 1.6; }
+  h1 { font-size: 20px; margin-bottom: 4px; }
+  .sub { color: #888; font-size: 13px; margin-bottom: 20px; }
+  .card { border: 1px solid #ddd; border-radius: 10px; padding: 16px; margin-bottom: 16px; background: #fafafa; }
+  .row { display: flex; gap: 8px; margin-bottom: 10px; }
+  input { flex: 1; padding: 8px 10px; border: 1px solid #ccc; border-radius: 8px; font-size: 14px; }
+  button { padding: 8px 14px; border: none; border-radius: 8px; background: #2563eb; color: #fff; font-size: 14px; cursor: pointer; }
+  button.ghost { background: #e5e7eb; color: #333; }
+  button.danger { background: #ef4444; }
+  ul { list-style: none; padding: 0; margin: 0; }
+  li { display: flex; align-items: center; justify-content: space-between; padding: 8px 10px; border: 1px solid #eee; border-radius: 8px; margin-bottom: 6px; background: #fff; }
+  .hint { font-size: 12px; color: #666; }
+  code { background: #f0f0f0; padding: 1px 5px; border-radius: 4px; }
+</style>
+</head>
+<body data-page-node-id="fUFpXA32WkGShkre8d2EEq">
+  <h1 data-page-node-id="1VMkcP2hnId9NxpvqlfaMQ">中转站代理设置</h1>
+  <div class="sub" data-page-node-id="C3pY7qnNEpNuZugdplm8Id">无限画布 · 代理出口 <span id="origin" data-page-node-id="rvoh5f6kBYxhiT9zztFSud"></span></div>
+
+  <div class="card" data-page-node-id="zF5xUXXfJeg9PAFfW4Tbus">
+    <p data-page-node-id="BKrfUeGTeDO2dmgUqYPIKV"><b data-page-node-id="RQq0mrv5aF4M4F753kQBBy">怎么用？</b></p>
+    <ul data-page-node-id="ny9IElIveg8EblEBMMXWXu">
+      <li data-page-node-id="dXdAJiBBbm3AwTU4F5HCvW">① <b data-page-node-id="NGe5BLJm7eQxUuDakAMcNA">能直连</b>的中转站：在无限画布里直接填它的真实 URL 即可，<b data-page-node-id="Fi31cankF0iBm8JD8qb3fc">不用管这里</b>，后台不会走代理。</li>
+      <li data-page-node-id="lHUfzPmZBa5VfHBHjgexZj">② <b data-page-node-id="gzCsKFakhMTHof47XFOvKe">被浏览器 CORS 拦住</b>的中转站（像 forkc2p 这种）：把它的域名加到下面列表，然后在无限画布里照常填它的真实 URL，后台会自动走代理。</li>
+      <li data-page-node-id="i2ohHLw3uqeAQhBtbEt5I3">③ 删掉列表里的中转站 = 不再走代理。</li>
+    </ul>
+  </div>
+
+  <div class="card" data-page-node-id="XESPaVxRMiYbI5cwRZw7HC">
+    <div class="row" data-page-node-id="F3DD45pt1KAFX9sR2IJKIG">
+      <input id="originInput" placeholder="输入中转站域名，例如 https://forkc2p.com" data-page-node-id="p8o0eceP2xZGriEiFB21JE" />
+      <button id="addBtn" data-page-node-id="30BSZNZUtE6X3dQhCUAToE">添加</button>
+    </div>
+    <div class="hint" data-page-node-id="MkrNChuOYGR7lMdOwShf3c">填完整 URL 或纯域名都行，会自动取域名部分。例如填 <code data-page-node-id="UcBWHJuMXHTef8hnI89Gcm">https://forkc2p.com/v1</code> 也只记 <code data-page-node-id="e2RWLH7DCU65UiQITBKhVA">forkc2p.com</code>。</div>
+  </div>
+
+  <div class="card" data-page-node-id="R509QbDFpHUJpI474xPfKy">
+    <p data-page-node-id="zd1FIgvhgOJtPbEyEmgjRR"><b data-page-node-id="HUrDMIxWdDX0d2ZAqJfS90">当前走代理的中转站</b>（首次打开已自动加入 forkc2p.com）</p>
+    <ul id="list" data-page-node-id="pgzZDtYowvpFF0IydsphAM"></ul>
+    <div id="empty" class="hint" data-page-node-id="VGGltD3FAXVUkan0VQXmt6">列表为空：所有跨域请求都会直连，不走代理。</div>
+  </div>
+
+<script>
+  const CACHE = 'ic-proxy-cache';
+  const KEY = 'ic-proxy-list';
+  const LS = 'ic_proxy_relays';
+  const SEED = ['forkc2p.com'];
+
+  function getList() {
+    try { return JSON.parse(localStorage.getItem(LS) || '[]'); } catch { return []; }
+  }
+  function setList(arr) {
+    localStorage.setItem(LS, JSON.stringify(arr));
+    syncCache(arr);
+    render();
+  }
+  async function syncCache(arr) {
+    try {
+      const c = await caches.open(CACHE);
+      await c.put(KEY, new Response(JSON.stringify(arr), { headers: { 'Content-Type': 'application/json' } }));
+    } catch (e) {
+      alert('缓存写入失败（代理列表无法被 Service Worker 读取）：' + e.message);
+    }
+  }
+
+  function render() {
+    const ul = document.getElementById('list');
+    ul.innerHTML = '';
+    const arr = getList();
+    document.getElementById('empty').style.display = arr.length ? 'none' : 'block';
+    arr.forEach((o, i) => {
+      const li = document.createElement('li');
+      const span = document.createElement('span');
+      span.textContent = o;
+      const btn = document.createElement('button');
+      btn.className = 'danger';
+      btn.textContent = '删除';
+      btn.onclick = () => { const a = getList(); a.splice(i, 1); setList(a); };
+      li.appendChild(span);
+      li.appendChild(btn);
+      ul.appendChild(li);
+    });
+  }
+
+  document.getElementById('addBtn').onclick = () => {
+    const raw = document.getElementById('originInput').value.trim();
+    if (!raw) return;
+    let host;
+    try { host = new URL(raw).hostname; } catch {
+      // 允许纯域名（不带协议）
+      try { host = new URL('https://' + raw).hostname; } catch { alert('请输入合法的 URL 或域名'); return; }
+    }
+    const a = getList();
+    if (a.includes(host)) { alert('已经在列表里了'); return; }
+    a.push(host);
+    setList(a);
+    document.getElementById('originInput').value = '';
+  };
+
+  window.addEventListener('load', async () => {
+    document.getElementById('origin').textContent = '（' + location.origin + '）';
+    // 首次打开：若列表为空则播种 forkc2p.com
+    let arr = getList();
+    if (arr.length === 0) { arr = SEED.slice(); }
+    setList(arr);
+    // 确保 Cache 与 localStorage 同步
+    const c = await caches.open(CACHE);
+    if (!await c.match(KEY)) { await syncCache(getList()); }
+  });
+</script>
+</body>
+</html>
